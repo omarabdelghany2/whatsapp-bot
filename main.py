@@ -1,5 +1,6 @@
 from flask import Flask, request
-import requests, os
+import requests
+import json
 
 app = Flask(__name__)
 
@@ -19,6 +20,9 @@ def verify():
 @app.route("/webhook", methods=["POST"])
 def webhook():
     data = request.get_json()
+    print("📩 Received webhook data:")
+    print(json.dumps(data, indent=2))  # <-- log everything
+
     try:
         message = data["entry"][0]["changes"][0]["value"]["messages"][0]
         from_number = message["from"]
@@ -40,13 +44,14 @@ def webhook():
             "type": "text",
             "text": {"body": reply},
         }
-        requests.post(url, headers=headers, json=payload)
+        response = requests.post(url, headers=headers, json=payload)
+        print("✅ Sent reply:", response.text)
+
     except Exception as e:
-        print("Error:", e)
+        print("❌ Error handling webhook:", e)
 
     return "OK", 200
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=8080)
 
